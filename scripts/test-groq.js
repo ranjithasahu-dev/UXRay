@@ -1,5 +1,7 @@
-const Groq = require("groq-sdk");
-require("dotenv").config({ path: ".env.local" });
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
 
 async function testGroq() {
   const apiKey = process.env.GROQ_API_KEY;
