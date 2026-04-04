@@ -67,6 +67,50 @@ function getChipPlacement(
   } as const;
 }
 
+function getVisibleBounds(
+  bounds: { x: number; y: number; width: number; height: number },
+  screenshot: ScanResult["screenshot"]
+) {
+  const minWidth = Math.min(120, screenshot.width);
+  const minHeight = Math.min(34, screenshot.height);
+  const paddedWidth = Math.max(bounds.width + 16, minWidth);
+  const paddedHeight = Math.max(bounds.height + 12, minHeight);
+  const centeredX = bounds.x - (paddedWidth - bounds.width) / 2;
+  const centeredY = bounds.y - (paddedHeight - bounds.height) / 2;
+
+  const clampedX = Math.max(0, Math.min(centeredX, screenshot.width - paddedWidth));
+  const clampedY = Math.max(0, Math.min(centeredY, screenshot.height - paddedHeight));
+
+  return {
+    x: clampedX,
+    y: clampedY,
+    width: Math.min(paddedWidth, screenshot.width - clampedX),
+    height: Math.min(paddedHeight, screenshot.height - clampedY),
+  };
+}
+
+function getFindingMatchText(result: ScanResult, findingId: string) {
+  const finding = result.findings.find((candidate) => candidate.id === findingId);
+
+  if (!finding) {
+    return null;
+  }
+
+  const matchedText = finding.elementIds
+    .map((elementId) => result.elements.find((element) => element.id === elementId)?.text?.trim())
+    .find((text) => text && text.length > 0);
+
+  return matchedText ?? null;
+}
+
+function truncateMatchText(text: string, maxLength = 38) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength - 1)}…`;
+}
+
 export function ScanResults({
   result,
   selectedFindingId,
@@ -79,6 +123,9 @@ export function ScanResults({
       result.findings[0],
     [result.findings, selectedFindingId]
   );
+  const selectedMatchText = selectedFinding
+    ? getFindingMatchText(result, selectedFinding.id)
+    : null;
   const showOverlayBoxes = !result.meta.note && !imageFailed && result.findings.length > 0;
   const showEmptyOverlay = !result.meta.note && !imageFailed && result.findings.length === 0;
 
@@ -150,6 +197,11 @@ export function ScanResults({
                   </span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-300">{finding.explanation}</p>
+                {getFindingMatchText(result, finding.id) ? (
+                  <p className="mt-2 rounded-xl border border-white/8 bg-slate-950/40 px-3 py-2 text-xs leading-5 text-slate-300">
+                    Matched text: “{truncateMatchText(getFindingMatchText(result, finding.id) ?? "", 120)}”
+                  </p>
+                ) : null}
               </button>
             ))
           ) : (
@@ -241,7 +293,9 @@ export function ScanResults({
                     return null;
                   }
 
-                  const placement = getChipPlacement(element.bounds, result.screenshot);
+                  const visibleBounds = getVisibleBounds(element.bounds, result.screenshot);
+                  const placement = getChipPlacement(visibleBounds, result.screenshot);
+                  const matchText = element.text?.trim();
                   const chipVerticalStyle =
                     placement.vertical === "top"
                       ? { top: "0.5rem" }
@@ -264,20 +318,28 @@ export function ScanResults({
                     placement.vertical === "top"
                       ? { top: "0.5rem" }
                       : { bottom: "0.5rem" };
+                  const tooltipVerticalStyle =
+                    placement.vertical === "top"
+                      ? { top: "3.4rem" }
+                      : { bottom: "3.4rem" };
+                  const tooltipHorizontalStyle =
+                    placement.horizontal === "left"
+                      ? { left: "0.5rem" }
+                      : { right: "0.5rem" };
 
                   return (
                     <button
                       key={`${finding.id}-${elementId}`}
                       type="button"
                       onClick={() => onSelectFinding(finding.id)}
-                      className={`absolute rounded-sm border-2 transition hover:scale-[1.01] ${getSeverityColor(
+                      className={`group absolute rounded-sm border-2 transition hover:scale-[1.01] ${getSeverityColor(
                         finding.severity
                       )} ${selectedFinding?.id === finding.id ? "shadow-lg shadow-cyan-500/20" : ""}`}
                       style={{
-                        left: `${(element.bounds.x / result.screenshot.width) * 100}%`,
-                        top: `${(element.bounds.y / result.screenshot.height) * 100}%`,
-                        width: `${(element.bounds.width / result.screenshot.width) * 100}%`,
-                        height: `${(element.bounds.height / result.screenshot.height) * 100}%`,
+                        left: `${(visibleBounds.x / result.screenshot.width) * 100}%`,
+                        top: `${(visibleBounds.y / result.screenshot.height) * 100}%`,
+                        width: `${(visibleBounds.width / result.screenshot.width) * 100}%`,
+                        height: `${(visibleBounds.height / result.screenshot.height) * 100}%`,
                         overflow: "visible",
                       }}
                       aria-label={`Highlight ${finding.patternType}`}
@@ -297,13 +359,33 @@ export function ScanResults({
 
                       {selectedFinding?.id === finding.id ? (
                         <span
-                          className="absolute z-10 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-slate-950/92 px-2.5 py-1.5 text-[10px] leading-none font-medium text-white"
+                          className="absolute z-10 max-w-[min(14rem,calc(100%-3.25rem))] overflow-hidden rounded-full bg-slate-950/92 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-lg"
                           style={{
                             ...sharedVerticalStyle,
                             ...labelStyle,
                           }}
                         >
-                          {finding.patternType}
+                          <span className="block truncate">{finding.patternType}</span>
+                        </span>
+                      ) : null}
+
+                      {selectedFinding?.id === finding.id && matchText ? (
+                        <span
+                          className="pointer-events-none absolute z-20 hidden w-72 max-w-[calc(100vw-3rem)] rounded-2xl border border-white/10 bg-slate-950/96 px-3 py-3 text-left shadow-xl group-hover:block group-focus-visible:block"
+                          style={{
+                            ...tooltipVerticalStyle,
+                            ...tooltipHorizontalStyle,
+                          }}
+                        >
+                          <span className="block text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                            Why It Was Flagged
+                          </span>
+                          <span className="mt-2 block text-xs leading-5 text-slate-100 whitespace-normal break-words">
+                            “{matchText}”
+                          </span>
+                          <span className="mt-2 block text-xs leading-5 text-slate-300 whitespace-normal break-words">
+                            {finding.explanation}
+                          </span>
                         </span>
                       ) : null}
 
@@ -334,6 +416,14 @@ export function ScanResults({
             <h3 className="mt-2 text-xl font-semibold text-white">
               {selectedFinding.patternType}
             </h3>
+            {selectedMatchText ? (
+              <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                  Matched On Page
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-100">“{selectedMatchText}”</p>
+              </div>
+            ) : null}
             <p className="mt-2 text-sm leading-6 text-slate-200">
               {selectedFinding.explanation}
             </p>
