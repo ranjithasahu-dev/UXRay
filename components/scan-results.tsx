@@ -240,12 +240,18 @@ export function ScanResults({
                       aria-label={`Highlight ${finding.patternType}`}
                     >
                       <span
-                        className={`absolute -top-3 left-2 flex min-w-6 items-center justify-center rounded-full px-2 py-1 text-[10px] font-semibold text-white shadow-lg ${
+                        className={`absolute left-2 top-2 flex min-w-6 items-center justify-center rounded-full px-2 py-1 text-[10px] font-semibold text-white shadow-lg ${
                           finding.severity === "high" ? "bg-red-600" : "bg-amber-500 text-slate-950"
                         }`}
                       >
                         {getFindingIndex(result, finding.id)}
                       </span>
+
+                      {selectedFinding?.id === finding.id ? (
+                        <span className="absolute left-10 top-2 max-w-[11rem] rounded-full bg-slate-950/92 px-2 py-1 text-[10px] font-medium text-white">
+                          {finding.patternType}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })
