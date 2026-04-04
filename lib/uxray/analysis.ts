@@ -230,7 +230,8 @@ function refineElementIdsForFinding(
   const candidates = finding.elementIds
     .map((id) => elementsById.get(id))
     .filter((element): element is ExtractedElement => Boolean(element))
-    .filter((element) => element.bounds);
+    .filter((element) => element.bounds)
+    .filter((element) => isEligibleForPattern(finding.patternType, element));
 
   if (candidates.length === 0) {
     return finding.elementIds.slice(0, 2);
@@ -270,6 +271,38 @@ function refineElementIdsForFinding(
   const maxElements = finding.patternType === "Misleading CTA Hierarchy" ? 2 : 3;
 
   return deduped.slice(0, maxElements).map((element) => element.id);
+}
+
+function isEligibleForPattern(patternType: DarkPatternType, element: ExtractedElement) {
+  switch (patternType) {
+    case "Fake Urgency":
+      return (
+        (element.kind === "text" || element.kind === "timer") &&
+        Boolean(element.bounds) &&
+        (element.bounds!.height <= 80 || element.kind === "timer") &&
+        (element.bounds!.width <= 700) &&
+        !looksLikeNavigation(element)
+      );
+    case "Confirm Shaming":
+      return element.kind === "text" || element.kind === "link";
+    case "Forced Signup":
+      return element.kind === "modal" || element.kind === "form";
+    case "Hidden Unsubscribe":
+      return element.kind === "link" || element.kind === "text";
+    case "Misleading CTA Hierarchy":
+      return element.kind === "button" || element.kind === "link";
+    default:
+      return true;
+  }
+}
+
+function looksLikeNavigation(element: ExtractedElement) {
+  const text = element.text.toLowerCase();
+
+  return (
+    /home|deals|journey|support|login|destinations|navbar|navigation/.test(text) ||
+    text.split(" ").length > 9
+  );
 }
 
 function compareElementPriority(left: ExtractedElement, right: ExtractedElement) {
