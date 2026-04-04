@@ -9,6 +9,15 @@ export type ScanInput = {
   extractedPage?: ExtractedPage;
 };
 
+function isFixtureBackedVoyagoUrl(url: string) {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === "voyago-hackthon.vercel.app" || hostname === "voyago-demo.local";
+  } catch {
+    return false;
+  }
+}
+
 function getDemoExtraction(url: string) {
   return getGenericFixture(url);
 }
@@ -44,11 +53,11 @@ async function getPageForScan(input: ScanInput) {
     };
   }
 
-  if (/voyago-demo\.local/i.test(input.url)) {
+  if (isFixtureBackedVoyagoUrl(input.url)) {
     return {
       extractionMode: "fixture" as const,
       page: getVoyagoFixture(input.url),
-      note: "Using the local fixture dataset for this URL.",
+      note: undefined,
     };
   }
 
