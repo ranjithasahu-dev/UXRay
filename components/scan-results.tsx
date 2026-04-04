@@ -215,14 +215,13 @@ export function ScanResults({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-[2rem] border border-white/10 bg-slate-950/70 p-5 shadow-2xl shadow-slate-950/30 backdrop-blur">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.28em] text-cyan-200/70">X-Ray View</p>
-            <p className="mt-1 text-sm text-slate-400">{result.title}</p>
-          </div>
+        <div className="space-y-4 rounded-[2rem] border border-white/10 bg-slate-950/70 p-5 shadow-2xl shadow-slate-950/30 backdrop-blur">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-[0.28em] text-cyan-200/70">X-Ray View</p>
+            </div>
 
-        </div>
+          </div>
 
         {result.meta.note ? (
           <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-100">
