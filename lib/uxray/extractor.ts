@@ -5,6 +5,7 @@ import type { ExtractedElement, ExtractedPage } from "@/lib/uxray/types";
 type BrowserExtractionResult = {
   page: ExtractedPage;
   extractionMode: "playwright";
+  note?: undefined;
 };
 
 function inferKind(tagName: string, role: string | null, text: string) {
