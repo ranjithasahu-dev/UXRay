@@ -6,8 +6,8 @@ import type { ScanResult, SeverityLevel } from "@/lib/uxray/types";
 
 function getSeverityColor(severity: SeverityLevel) {
   return severity === "high"
-    ? "border-red-500 bg-red-500/10 text-red-50"
-    : "border-amber-400 bg-amber-400/10 text-amber-50";
+    ? "border-red-500/95 bg-red-500/8 text-red-50"
+    : "border-amber-400/95 bg-amber-400/8 text-amber-50";
 }
 
 function getBadgeTone(severity: SeverityLevel) {
@@ -197,7 +197,7 @@ export function ScanResults({
                       key={`${finding.id}-${elementId}`}
                       type="button"
                       onClick={() => onSelectFinding(finding.id)}
-                      className={`absolute rounded-md border-2 transition hover:scale-[1.02] ${getSeverityColor(
+                      className={`absolute rounded-sm border-2 transition hover:scale-[1.01] ${getSeverityColor(
                         finding.severity
                       )} ${selectedFinding?.id === finding.id ? "shadow-lg shadow-cyan-500/20" : ""}`}
                       style={{
@@ -208,9 +208,11 @@ export function ScanResults({
                       }}
                       aria-label={`Highlight ${finding.patternType}`}
                     >
-                      <span className="absolute -top-7 left-0 max-w-[10rem] rounded-full bg-slate-950/90 px-2 py-1 text-[11px] font-medium text-white">
-                        {finding.patternType}
-                      </span>
+                      {selectedFinding?.id === finding.id ? (
+                        <span className="absolute -top-7 left-0 max-w-[10rem] rounded-full bg-slate-950/92 px-2 py-1 text-[11px] font-medium text-white">
+                          {finding.patternType}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })

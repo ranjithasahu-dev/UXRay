@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getGroqClient, GROQ_MODEL } from "@/lib/groq";
 import type {
   DarkPatternType,
+  ExtractedElement,
   ExtractedPage,
   PatternFinding,
   SeverityLevel,
@@ -163,7 +164,7 @@ export async function analyzeDarkPatterns(page: ExtractedPage) {
   const groq = getGroqClient();
 
   if (!groq) {
-    return runRuleBasedAnalysis(page);
+    return postProcessFindings(page, runRuleBasedAnalysis(page));
   }
 
   try {
@@ -186,20 +187,157 @@ export async function analyzeDarkPatterns(page: ExtractedPage) {
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
-      return runRuleBasedAnalysis(page);
+      return postProcessFindings(page, runRuleBasedAnalysis(page));
     }
 
     const parsed = findingsSchema.parse(JSON.parse(escapeJsonBlock(content)));
 
-    return parsed.findings.map((finding) =>
+    return postProcessFindings(
+      page,
+      parsed.findings.map((finding) =>
       createFinding(
         finding.patternType,
         finding.severity,
         finding.explanation,
         finding.elementIds
       )
-    );
+    ));
   } catch {
-    return runRuleBasedAnalysis(page);
+    return postProcessFindings(page, runRuleBasedAnalysis(page));
   }
+}
+
+function postProcessFindings(page: ExtractedPage, findings: PatternFinding[]) {
+  const elementsById = new Map(page.elements.map((element) => [element.id, element]));
+
+  return findings
+    .map((finding) => {
+      const refinedIds = refineElementIdsForFinding(finding, elementsById);
+
+      return {
+        ...finding,
+        id: `${finding.patternType.toLowerCase().replace(/\s+/g, "-")}-${refinedIds.join("-")}`,
+        elementIds: refinedIds,
+      };
+    })
+    .filter((finding) => finding.elementIds.length > 0);
+}
+
+function refineElementIdsForFinding(
+  finding: PatternFinding,
+  elementsById: Map<string, ExtractedElement>
+) {
+  const candidates = finding.elementIds
+    .map((id) => elementsById.get(id))
+    .filter((element): element is ExtractedElement => Boolean(element))
+    .filter((element) => element.bounds);
+
+  if (candidates.length === 0) {
+    return finding.elementIds.slice(0, 2);
+  }
+
+  const filtered = candidates
+    .sort(compareElementPriority)
+    .filter((candidate, index, all) => {
+      return !all.some((other, otherIndex) => {
+        if (index === otherIndex || !other.bounds || !candidate.bounds) {
+          return false;
+        }
+
+        if (other.id === candidate.id) {
+          return false;
+        }
+
+        const overlapsHeavily = getOverlapRatio(candidate, other) > 0.72;
+        const otherIsPreferred = compareElementPriority(other, candidate) < 0;
+
+        return overlapsHeavily && otherIsPreferred;
+      });
+    });
+
+  const deduped = filtered.filter((candidate, index, all) => {
+    return !all.slice(0, index).some((other) => {
+      if (!candidate.bounds || !other.bounds) {
+        return false;
+      }
+
+      const sameRegion = getOverlapRatio(candidate, other) > 0.55;
+      const sameKind = candidate.kind === other.kind;
+      return sameRegion && sameKind;
+    });
+  });
+
+  const maxElements = finding.patternType === "Misleading CTA Hierarchy" ? 2 : 3;
+
+  return deduped.slice(0, maxElements).map((element) => element.id);
+}
+
+function compareElementPriority(left: ExtractedElement, right: ExtractedElement) {
+  const priorityDelta = getKindPriority(left.kind) - getKindPriority(right.kind);
+
+  if (priorityDelta !== 0) {
+    return priorityDelta;
+  }
+
+  const leftArea = getArea(left);
+  const rightArea = getArea(right);
+  return leftArea - rightArea;
+}
+
+function getKindPriority(kind: ExtractedElement["kind"]) {
+  switch (kind) {
+    case "button":
+      return 0;
+    case "link":
+      return 1;
+    case "modal":
+      return 2;
+    case "timer":
+      return 3;
+    case "input":
+      return 4;
+    case "text":
+      return 5;
+    case "form":
+      return 6;
+    case "image":
+      return 7;
+    default:
+      return 8;
+  }
+}
+
+function getArea(element: ExtractedElement) {
+  if (!element.bounds) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return element.bounds.width * element.bounds.height;
+}
+
+function getOverlapRatio(left: ExtractedElement, right: ExtractedElement) {
+  if (!left.bounds || !right.bounds) {
+    return 0;
+  }
+
+  const xOverlap =
+    Math.max(
+      0,
+      Math.min(left.bounds.x + left.bounds.width, right.bounds.x + right.bounds.width) -
+        Math.max(left.bounds.x, right.bounds.x)
+    );
+  const yOverlap =
+    Math.max(
+      0,
+      Math.min(left.bounds.y + left.bounds.height, right.bounds.y + right.bounds.height) -
+        Math.max(left.bounds.y, right.bounds.y)
+    );
+
+  const overlapArea = xOverlap * yOverlap;
+
+  if (overlapArea === 0) {
+    return 0;
+  }
+
+  return overlapArea / Math.min(getArea(left), getArea(right));
 }
