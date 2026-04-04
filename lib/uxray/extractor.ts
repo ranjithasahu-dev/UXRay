@@ -1,4 +1,6 @@
-import { chromium } from "playwright";
+import vercelChromium from "@sparticuz/chromium";
+import { chromium as playwrightChromium } from "playwright";
+import { chromium as playwrightCoreChromium } from "playwright-core";
 
 import type { ExtractedElement, ExtractedPage } from "@/lib/uxray/types";
 
@@ -43,7 +45,7 @@ function inferKind(tagName: string, role: string | null, text: string) {
 }
 
 export async function extractPageWithPlaywright(url: string): Promise<BrowserExtractionResult> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage({
@@ -206,4 +208,20 @@ export async function extractPageWithPlaywright(url: string): Promise<BrowserExt
   } finally {
     await browser.close();
   }
+}
+
+async function launchBrowser() {
+  const isVercelRuntime = Boolean(process.env.VERCEL);
+
+  if (!isVercelRuntime) {
+    return playwrightChromium.launch({ headless: true });
+  }
+
+  const executablePath = await vercelChromium.executablePath();
+
+  return playwrightCoreChromium.launch({
+    args: vercelChromium.args,
+    executablePath,
+    headless: true,
+  });
 }

@@ -10,10 +10,6 @@ export type ScanInput = {
 };
 
 function getDemoExtraction(url: string) {
-  if (/voyago/i.test(url)) {
-    return getVoyagoFixture(url);
-  }
-
   return getGenericFixture(url);
 }
 
@@ -58,12 +54,14 @@ async function getPageForScan(input: ScanInput) {
 
   try {
     return await extractPageWithPlaywright(input.url);
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message.split("\n")[0] : "Unable to launch live capture.";
+
     return {
       extractionMode: "fixture" as const,
       page: getDemoExtraction(input.url),
-      note:
-        "Live page capture was unavailable for this URL. The site may be blocking automated browsing or did not load correctly.",
+      note: `Live page capture was unavailable for this URL. ${message}`,
     };
   }
 }
