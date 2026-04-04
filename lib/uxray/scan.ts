@@ -1,6 +1,6 @@
 import { analyzeDarkPatterns } from "@/lib/uxray/analysis";
 import { extractPageWithPlaywright } from "@/lib/uxray/extractor";
-import { getGenericFixture, getVoyagoFixture } from "@/lib/uxray/fixtures";
+import { getGenericFixture } from "@/lib/uxray/fixtures";
 import { calculateUxRayScore } from "@/lib/uxray/scoring";
 import type { ExtractedPage, ScanResult } from "@/lib/uxray/types";
 
@@ -8,15 +8,6 @@ export type ScanInput = {
   url: string;
   extractedPage?: ExtractedPage;
 };
-
-function isFixtureBackedVoyagoUrl(url: string) {
-  try {
-    const { hostname } = new URL(url);
-    return hostname === "voyago-hackthon.vercel.app" || hostname === "voyago-demo.local";
-  } catch {
-    return false;
-  }
-}
 
 function getDemoExtraction(url: string) {
   return getGenericFixture(url);
@@ -49,14 +40,6 @@ async function getPageForScan(input: ScanInput) {
     return {
       extractionMode: "fixture" as const,
       page: input.extractedPage,
-      note: undefined,
-    };
-  }
-
-  if (isFixtureBackedVoyagoUrl(input.url)) {
-    return {
-      extractionMode: "fixture" as const,
-      page: getVoyagoFixture(input.url),
       note: undefined,
     };
   }
