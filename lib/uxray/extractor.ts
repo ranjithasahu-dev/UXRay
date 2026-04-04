@@ -60,11 +60,6 @@ export async function extractPageWithPlaywright(url: string): Promise<BrowserExt
 
     const title = await page.title();
 
-    const screenshotBuffer = await page.screenshot({
-      fullPage: true,
-      type: "png",
-    });
-
     const screenshotSize = await page.evaluate(() => ({
       width: Math.max(
         document.documentElement.scrollWidth,
@@ -191,16 +186,19 @@ export async function extractPageWithPlaywright(url: string): Promise<BrowserExt
       kind: inferKind(element.selector ?? "div", element.role ?? null, element.text),
     }));
 
+    const screenshot = await capturePageScreenshot(page, {
+      title: title || url,
+      url,
+      width: screenshotSize.width,
+      height: screenshotSize.height,
+    });
+
     return {
       extractionMode: "playwright",
       page: {
         url,
         title: title || url,
-        screenshot: {
-          src: `data:image/png;base64,${screenshotBuffer.toString("base64")}`,
-          width: screenshotSize.width,
-          height: screenshotSize.height,
-        },
+        screenshot,
         elements: normalizedElements,
       },
     };
@@ -249,4 +247,113 @@ async function navigateForCapture(
   }
 
   throw lastError instanceof Error ? lastError : new Error("Navigation failed.");
+}
+
+async function capturePageScreenshot(
+  page: Awaited<ReturnType<Awaited<ReturnType<typeof launchBrowser>>["newPage"]>>,
+  options: {
+    title: string;
+    url: string;
+    width: number;
+    height: number;
+  }
+) {
+  const attempts: Array<() => Promise<{ src: string; width: number; height: number }>> = [
+    async () => {
+      const buffer = await page.screenshot({
+        fullPage: true,
+        type: "png",
+        animations: "disabled",
+      });
+
+      return {
+        src: `data:image/png;base64,${buffer.toString("base64")}`,
+        width: options.width,
+        height: options.height,
+      };
+    },
+    async () => {
+      const viewport = page.viewportSize() ?? { width: 1440, height: 1200 };
+      const buffer = await page.screenshot({
+        fullPage: false,
+        type: "png",
+        animations: "disabled",
+      });
+
+      return {
+        src: `data:image/png;base64,${buffer.toString("base64")}`,
+        width: viewport.width,
+        height: viewport.height,
+      };
+    },
+    async () => {
+      const viewport = page.viewportSize() ?? { width: 1440, height: 1200 };
+      const buffer = await page.screenshot({
+        fullPage: false,
+        type: "jpeg",
+        quality: 80,
+        animations: "disabled",
+      });
+
+      return {
+        src: `data:image/jpeg;base64,${buffer.toString("base64")}`,
+        width: viewport.width,
+        height: viewport.height,
+      };
+    },
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      return await attempt();
+    } catch {
+      continue;
+    }
+  }
+
+  return createCaptureFallback(options);
+}
+
+function createCaptureFallback(options: {
+  title: string;
+  url: string;
+  width: number;
+  height: number;
+}) {
+  const width = Math.max(1280, Math.min(options.width || 1280, 1600));
+  const height = Math.max(720, Math.min(options.height || 720, 1400));
+  const safeTitle = escapeXml(options.title);
+  const safeUrl = escapeXml(options.url);
+
+  const svg = encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="${width}" height="${height}" fill="url(#bg)"/>
+  <rect x="48" y="48" width="${width - 96}" height="${height - 96}" rx="28" fill="#10192b" stroke="#334155"/>
+  <text x="92" y="130" fill="#e2e8f0" font-size="38" font-family="Arial" font-weight="700">${safeTitle}</text>
+  <text x="92" y="182" fill="#94a3b8" font-size="22" font-family="Arial">${safeUrl}</text>
+  <text x="92" y="260" fill="#f8fafc" font-size="28" font-family="Arial" font-weight="700">Screenshot preview unavailable</text>
+  <text x="92" y="308" fill="#94a3b8" font-size="22" font-family="Arial">UXRay analyzed the page, but the browser could not render a bitmap screenshot.</text>
+</svg>
+  `);
+
+  return {
+    src: `data:image/svg+xml;charset=utf-8,${svg}`,
+    width,
+    height,
+  };
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
