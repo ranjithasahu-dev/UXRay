@@ -51,13 +51,12 @@ export async function extractPageWithPlaywright(url: string): Promise<BrowserExt
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1200 },
       deviceScaleFactor: 1,
+      ignoreHTTPSErrors: true,
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     });
 
-    await page.goto(url, {
-      waitUntil: "networkidle",
-      timeout: 30000,
-    });
-    await page.waitForTimeout(1200);
+    await navigateForCapture(page, url);
 
     const title = await page.title();
 
@@ -224,4 +223,30 @@ async function launchBrowser() {
     executablePath,
     headless: true,
   });
+}
+
+async function navigateForCapture(
+  page: Awaited<ReturnType<Awaited<ReturnType<typeof launchBrowser>>["newPage"]>>,
+  url: string
+) {
+  const strategies: Parameters<typeof page.goto>[1][] = [
+    { waitUntil: "domcontentloaded", timeout: 20000 },
+    { waitUntil: "load", timeout: 25000 },
+    { waitUntil: "networkidle", timeout: 12000 },
+  ];
+
+  let lastError: unknown;
+
+  for (const strategy of strategies) {
+    try {
+      await page.goto(url, strategy);
+      await page.waitForTimeout(1800);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Navigation failed.");
 }

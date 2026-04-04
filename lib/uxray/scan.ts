@@ -58,6 +58,11 @@ async function getPageForScan(input: ScanInput) {
     const message =
       error instanceof Error ? error.message.split("\n")[0] : "Unable to launch live capture.";
 
+    console.error("UXRay live capture failed", {
+      url: input.url,
+      message,
+    });
+
     return {
       extractionMode: "fixture" as const,
       page: getDemoExtraction(input.url),
