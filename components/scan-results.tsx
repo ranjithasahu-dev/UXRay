@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import type { ScanResult, SeverityLevel } from "@/lib/uxray/types";
 
@@ -51,12 +51,15 @@ export function ScanResults({
   selectedFindingId,
   onSelectFinding,
 }: ScanResultsProps) {
+  const [imageFailed, setImageFailed] = useState(false);
   const selectedFinding = useMemo(
     () =>
       result.findings.find((finding) => finding.id === selectedFindingId) ??
       result.findings[0],
     [result.findings, selectedFindingId]
   );
+  const showOverlayBoxes = !result.meta.note && !imageFailed && result.findings.length > 0;
+  const showEmptyOverlay = !result.meta.note && !imageFailed && result.findings.length === 0;
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
@@ -159,15 +162,29 @@ export function ScanResults({
               aspectRatio: `${result.screenshot.width} / ${result.screenshot.height}`,
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={result.screenshot.src}
-              alt={`Captured scan result for ${result.url}`}
-              className="absolute inset-0 block h-full w-full object-fill object-top align-top"
-            />
+            {imageFailed ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950 p-6 text-center">
+                <div className="max-w-xl rounded-2xl border border-white/10 bg-white/4 px-5 py-4">
+                  <p className="text-base font-semibold text-white">Screenshot preview failed to render</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    UXRay completed the analysis, but the returned image could not be displayed in
+                    the preview panel.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={result.screenshot.src}
+                alt={`Captured scan result for ${result.url}`}
+                className="absolute inset-0 block h-full w-full object-fill object-top align-top"
+                onError={() => setImageFailed(true)}
+              />
+            )}
 
             <div className="absolute inset-0">
-              {result.findings.flatMap((finding) =>
+              {showOverlayBoxes
+                ? result.findings.flatMap((finding) =>
                 finding.elementIds.map((elementId) => {
                   const element = result.elements.find((candidate) => candidate.id === elementId);
 
@@ -197,10 +214,11 @@ export function ScanResults({
                     </button>
                   );
                 })
-              )}
+              )
+                : null}
             </div>
 
-            {result.findings.length === 0 ? (
+            {showEmptyOverlay ? (
               <div className="pointer-events-none absolute inset-x-6 top-6 rounded-2xl border border-white/10 bg-slate-950/78 px-4 py-3 text-sm leading-6 text-slate-200 backdrop-blur">
                 No highlighted elements were found for the currently supported dark-pattern
                 categories on this page.
