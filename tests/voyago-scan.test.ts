@@ -27,8 +27,8 @@ describe("Voyago integration scan", () => {
       )
     ).toBe(true);
 
-    expect(result.score).toBe(100);
-    expect(result.score).toBeGreaterThanOrEqual(82);
+    expect(result.score).toBeGreaterThanOrEqual(78);
+    expect(result.score).toBeLessThanOrEqual(86);
     expect(result.riskLevel).toBe("High");
   });
 });

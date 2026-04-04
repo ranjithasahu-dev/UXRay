@@ -1,8 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, ShieldAlert, Sparkles } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import {
+  ArrowUpRight,
+  Radar,
+  ScanSearch,
+  Search,
+  ShieldAlert,
+  Sparkles,
+} from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { ScanResults } from "@/components/scan-results";
 import { Button } from "@/components/ui/button";
@@ -14,15 +21,14 @@ const progressSteps = [
   "Evaluating button hierarchy",
 ] as const;
 
-const demoUrl = "https://voyago-demo.local";
-
 export function UxRayDashboard() {
-  const [url, setUrl] = useState(demoUrl);
+  const [url, setUrl] = useState("");
   const [activeStep, setActiveStep] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isPending) {
@@ -35,6 +41,17 @@ export function UxRayDashboard() {
 
     return () => window.clearInterval(interval);
   }, [isPending]);
+
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+
+    resultsRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [result]);
 
   async function submitScan(scanUrl: string) {
     setError(null);
@@ -59,10 +76,17 @@ export function UxRayDashboard() {
   }
 
   function handleScan(scanUrl: string) {
+    const normalizedUrl = scanUrl.trim();
+
+    if (!normalizedUrl) {
+      setError("Paste a website URL to start the scan.");
+      return;
+    }
+
     setActiveStep(0);
     startTransition(async () => {
       try {
-        await submitScan(scanUrl);
+        await submitScan(normalizedUrl);
         setActiveStep(0);
       } catch (scanError) {
         setActiveStep(0);
@@ -73,27 +97,54 @@ export function UxRayDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_34%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-8 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.16),_transparent_24%),radial-gradient(circle_at_80%_12%,_rgba(34,211,238,0.16),_transparent_26%),linear-gradient(180deg,_#07111f_0%,_#0c1627_42%,_#0d1421_100%)] px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-        <section className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/6 px-6 py-8 shadow-2xl shadow-slate-950/40 backdrop-blur-xl sm:px-8 lg:px-10">
-          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-sm text-cyan-100">
-                <ShieldAlert className="size-4" />
-                Dark pattern scanner for product teams
+        <section className="relative overflow-hidden rounded-[2.8rem] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.86),rgba(16,24,39,0.72))] px-6 py-6 shadow-[0_30px_120px_rgba(2,6,23,0.55)] backdrop-blur-xl sm:px-8 sm:py-8 lg:px-10">
+          <div className="pointer-events-none absolute inset-0 opacity-30">
+            <div className="absolute inset-y-0 left-[8%] w-px bg-white/8" />
+            <div className="absolute inset-y-0 left-[42%] w-px bg-white/6" />
+            <div className="absolute inset-x-0 top-[28%] h-px bg-white/6" />
+          </div>
+
+          <div className="relative flex items-center justify-between gap-4 border-b border-white/8 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#f59e0b,#22d3ee)] text-slate-950 shadow-lg shadow-cyan-500/20">
+                <ScanSearch className="size-5" />
               </div>
-              <div className="space-y-4">
-                <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                  UXRay exposes manipulative UI patterns before they slip into production.
+              <div>
+                <p className="text-lg font-semibold tracking-tight text-white">UXRay</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
+                  Interface Risk Observatory
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 md:flex">
+              <ShieldAlert className="size-4 text-amber-300" />
+              Trust friction, urgency, and coercive CTA analysis
+            </div>
+          </div>
+
+          <div className="relative mt-8 grid gap-10 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-sm text-emerald-100">
+                <Radar className="size-4" />
+                Product safety review for growth pages and checkout flows
+              </div>
+
+              <div className="space-y-5">
+                <h1 className="max-w-4xl text-4xl font-semibold leading-[0.95] tracking-[-0.05em] text-white sm:text-6xl lg:text-[5.5rem]">
+                  See where your interface starts pushing instead of guiding.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-                  Paste a product URL, trigger the scan, and review AI-backed findings with
-                  scoring, severity, and screenshot-level evidence.
+                  Run a live scan on any public page and get a sharper read on coercive copy,
+                  hidden exits, interruptive signup moments, and visually imbalanced calls to
+                  action.
                 </p>
               </div>
 
               <form
-                className="rounded-[2rem] border border-white/10 bg-slate-950/55 p-3 shadow-xl shadow-slate-950/30"
+                className="rounded-[2rem] border border-white/10 bg-slate-950/60 p-3 shadow-xl shadow-slate-950/30"
                 onSubmit={(event) => {
                   event.preventDefault();
                   handleScan(url);
@@ -106,14 +157,14 @@ export function UxRayDashboard() {
                       type="url"
                       value={url}
                       onChange={(event) => setUrl(event.target.value)}
-                      placeholder="https://example.com"
+                      placeholder="Paste a website URL"
                       className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                     />
                   </label>
                   <Button
                     type="submit"
                     size="lg"
-                    className="h-12 rounded-[1.35rem] bg-cyan-400 px-6 text-slate-950 hover:bg-cyan-300"
+                    className="h-12 rounded-[1.35rem] bg-[linear-gradient(135deg,#22d3ee,#06b6d4)] px-6 text-slate-950 hover:opacity-95"
                     disabled={isPending}
                   >
                     {isPending ? "Scanning..." : "Scan"}
@@ -121,29 +172,40 @@ export function UxRayDashboard() {
                 </div>
               </form>
 
-              <div className="flex flex-wrap gap-3 text-sm text-slate-300">
-                <button
-                  type="button"
-                  className="rounded-full border border-white/12 bg-white/6 px-4 py-2 transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
-                  onClick={() => {
-                    setUrl(demoUrl);
-                    handleScan(demoUrl);
-                  }}
-                >
-                  Demo scan Voyago
-                </button>
-                <span className="rounded-full border border-white/8 px-4 py-2 text-slate-400">
-                  Groq-powered classification with deterministic fallback
-                </span>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[1.6rem] border border-white/8 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                    Detects
+                  </p>
+                  <p className="mt-3 text-xl font-semibold text-white">Five manipulation patterns</p>
+                </div>
+                <div className="rounded-[1.6rem] border border-white/8 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                    Returns
+                  </p>
+                  <p className="mt-3 text-xl font-semibold text-white">Score, risk, and evidence</p>
+                </div>
+                <div className="rounded-[1.6rem] border border-white/8 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                    Highlights
+                  </p>
+                  <p className="mt-3 text-xl font-semibold text-white">Clickable issue overlays</p>
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 rounded-[2rem] border border-white/10 bg-slate-950/55 p-5">
-              <div className="rounded-[1.6rem] border border-cyan-300/15 bg-cyan-300/8 p-5">
-                <div className="flex items-center gap-3 text-cyan-100">
-                  <Sparkles className="size-5" />
-                  <span className="text-sm uppercase tracking-[0.28em]">Live Scan Flow</span>
+            <div className="grid gap-4">
+              <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,20,34,0.96),rgba(16,24,39,0.88))] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 text-cyan-100">
+                    <Sparkles className="size-5" />
+                    <span className="text-sm uppercase tracking-[0.28em]">Scan Sequence</span>
+                  </div>
+                  <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-400">
+                    Live
+                  </span>
                 </div>
+
                 <div className="mt-5 space-y-3">
                   {progressSteps.map((step, index) => {
                     const isActive = isPending && index === activeStep;
@@ -153,25 +215,28 @@ export function UxRayDashboard() {
                       <motion.div
                         key={step}
                         layout
-                        className={`rounded-2xl border px-4 py-3 ${
+                        className={`rounded-[1.4rem] border px-4 py-4 ${
                           isActive
-                            ? "border-cyan-300/50 bg-cyan-300/12"
+                            ? "border-cyan-300/40 bg-cyan-300/10"
                             : isComplete
-                              ? "border-emerald-300/25 bg-emerald-300/8"
-                              : "border-white/8 bg-white/5"
+                              ? "border-emerald-300/20 bg-emerald-300/8"
+                              : "border-white/8 bg-white/4"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`size-3 rounded-full ${
-                              isActive
-                                ? "bg-cyan-300"
-                                : isComplete
-                                  ? "bg-emerald-300"
-                                  : "bg-slate-600"
-                            }`}
-                          />
-                          <p className="text-sm text-slate-100">{step}</p>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`size-2.5 rounded-full ${
+                                isActive
+                                  ? "bg-cyan-300"
+                                  : isComplete
+                                    ? "bg-emerald-300"
+                                    : "bg-slate-600"
+                              }`}
+                            />
+                            <p className="text-sm text-slate-100">{step}</p>
+                          </div>
+                          <ArrowUpRight className="size-4 text-slate-500" />
                         </div>
                       </motion.div>
                     );
@@ -179,10 +244,41 @@ export function UxRayDashboard() {
                 </div>
               </div>
 
-              <div className="rounded-[1.6rem] border border-white/8 bg-white/5 p-5 text-sm leading-7 text-slate-300">
-                UXRay currently ships with a deterministic Voyago demo extraction so the
-                dashboard, scoring model, and highlighting flow are ready even before the
-                browser automation step is wired in.
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[1.8rem] border border-white/10 bg-[#111827]/80 p-5">
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                    Signal Layers
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">
+                      Copy pressure and urgency framing
+                    </div>
+                    <div className="rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">
+                      Visually hidden declines and exits
+                    </div>
+                    <div className="rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">
+                      Dominant versus weakened CTA treatment
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(15,23,42,0.3))] p-5">
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                    Review Output
+                  </p>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <p className="text-3xl font-semibold text-white">Risk-scored</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-300">
+                        Findings land with clear severity and traceable evidence.
+                      </p>
+                    </div>
+                    <div className="h-px bg-white/10" />
+                    <p className="text-sm leading-6 text-slate-300">
+                      Designed for audits, launch reviews, and fast stakeholder walkthroughs.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -231,6 +327,7 @@ export function UxRayDashboard() {
           ) : result ? (
             <motion.div
               key="results"
+              ref={resultsRef}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import type { ScanResult, SeverityLevel } from "@/lib/uxray/types";
 
 function getSeverityColor(severity: SeverityLevel) {
@@ -14,6 +16,30 @@ function getBadgeTone(severity: SeverityLevel) {
     : "bg-amber-400/15 text-amber-100 ring-amber-300/30";
 }
 
+function getRiskTone(riskLevel: ScanResult["riskLevel"]) {
+  if (riskLevel === "High") {
+    return "border-red-400/30 bg-red-500/12 text-red-100";
+  }
+
+  if (riskLevel === "Medium") {
+    return "border-amber-400/30 bg-amber-500/12 text-amber-100";
+  }
+
+  return "border-emerald-400/30 bg-emerald-500/12 text-emerald-100";
+}
+
+function getScoreTone(riskLevel: ScanResult["riskLevel"]) {
+  if (riskLevel === "High") {
+    return "text-red-100";
+  }
+
+  if (riskLevel === "Medium") {
+    return "text-amber-100";
+  }
+
+  return "text-emerald-100";
+}
+
 type ScanResultsProps = {
   result: ScanResult;
   selectedFindingId: string | null;
@@ -25,9 +51,12 @@ export function ScanResults({
   selectedFindingId,
   onSelectFinding,
 }: ScanResultsProps) {
-  const selectedFinding =
-    result.findings.find((finding) => finding.id === selectedFindingId) ??
-    result.findings[0];
+  const selectedFinding = useMemo(
+    () =>
+      result.findings.find((finding) => finding.id === selectedFindingId) ??
+      result.findings[0],
+    [result.findings, selectedFindingId]
+  );
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
@@ -38,11 +67,17 @@ export function ScanResults({
               Manipulation Score
             </p>
             <div className="mt-3 flex items-end gap-3">
-              <span className="text-6xl font-semibold text-white">{result.score}</span>
+              <span className={`text-6xl font-semibold ${getScoreTone(result.riskLevel)}`}>
+                {result.score}
+              </span>
               <span className="pb-2 text-lg text-slate-400">/100</span>
             </div>
           </div>
-          <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100">
+          <div
+            className={`rounded-full border px-4 py-2 text-sm font-medium ${getRiskTone(
+              result.riskLevel
+            )}`}
+          >
             {result.riskLevel} Risk
           </div>
         </div>
@@ -134,7 +169,7 @@ export function ScanResults({
                     }}
                     aria-label={`Highlight ${finding.patternType}`}
                   >
-                    <span className="absolute -top-7 left-0 rounded-full bg-slate-950/90 px-2 py-1 text-[11px] font-medium text-white">
+                    <span className="absolute -top-7 left-0 max-w-[10rem] rounded-full bg-slate-950/90 px-2 py-1 text-[11px] font-medium text-white">
                       {finding.patternType}
                     </span>
                   </button>

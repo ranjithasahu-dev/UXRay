@@ -1,4 +1,5 @@
 import { analyzeDarkPatterns } from "@/lib/uxray/analysis";
+import { extractPageWithPlaywright } from "@/lib/uxray/extractor";
 import { getGenericFixture, getVoyagoFixture } from "@/lib/uxray/fixtures";
 import { calculateUxRayScore } from "@/lib/uxray/scoring";
 import type { ExtractedPage, ScanResult } from "@/lib/uxray/types";
@@ -17,7 +18,8 @@ function getDemoExtraction(url: string) {
 }
 
 export async function runUxRayScan(input: ScanInput): Promise<ScanResult> {
-  const page = input.extractedPage ?? getDemoExtraction(input.url);
+  const extractionResult = await getPageForScan(input);
+  const page = extractionResult.page;
   const findings = await analyzeDarkPatterns(page);
   const { score, riskLevel, breakdown } = calculateUxRayScore(findings);
 
@@ -30,5 +32,33 @@ export async function runUxRayScan(input: ScanInput): Promise<ScanResult> {
     breakdown,
     screenshot: page.screenshot,
     elements: page.elements,
+    meta: {
+      extractionMode: extractionResult.extractionMode,
+    },
   };
+}
+
+async function getPageForScan(input: ScanInput) {
+  if (input.extractedPage) {
+    return {
+      extractionMode: "fixture" as const,
+      page: input.extractedPage,
+    };
+  }
+
+  if (/voyago-demo\.local/i.test(input.url)) {
+    return {
+      extractionMode: "fixture" as const,
+      page: getVoyagoFixture(input.url),
+    };
+  }
+
+  try {
+    return await extractPageWithPlaywright(input.url);
+  } catch {
+    return {
+      extractionMode: "fixture" as const,
+      page: getDemoExtraction(input.url),
+    };
+  }
 }

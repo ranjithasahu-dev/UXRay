@@ -70,6 +70,10 @@ export type PatternFinding = {
 
 export type ScoreBreakdown = Record<DarkPatternType, number>;
 
+export type ScanMeta = {
+  extractionMode: "playwright" | "fixture";
+};
+
 export type ScanResult = {
   url: string;
   title: string;
@@ -79,4 +83,5 @@ export type ScanResult = {
   breakdown: ScoreBreakdown;
   screenshot: ExtractedPage["screenshot"];
   elements: ExtractedElement[];
+  meta: ScanMeta;
 };
