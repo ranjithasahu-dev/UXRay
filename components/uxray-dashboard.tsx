@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ScanSearch, Search, Sparkles } from "lucide-react";
+import { ScanSearch, Search } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { ScanResults } from "@/components/scan-results";
@@ -178,98 +178,6 @@ export function UxRayDashboard() {
                 </Button>
               </div>
             </form>
-
-            <div className="relative mx-auto mt-12 max-w-5xl overflow-hidden rounded-[1.75rem] border border-white/10 bg-white shadow-2xl">
-              <div className="grid min-h-[22rem] gap-0 md:grid-cols-[240px_1fr]">
-                <div className="border-b border-slate-200 bg-slate-50 p-5 md:border-b-0 md:border-r">
-                  <div className="flex items-center gap-2 text-slate-900">
-                    <div className="size-3 rounded-full bg-sky-500" />
-                    <span className="text-lg font-semibold">UXRay</span>
-                  </div>
-                  <div className="mt-6 space-y-2">
-                    <div className="rounded-xl bg-slate-200 px-4 py-3 text-sm font-medium text-slate-900">
-                      Latest scan
-                    </div>
-                    <div className="rounded-xl px-4 py-3 text-sm text-slate-500">History</div>
-                    <div className="rounded-xl px-4 py-3 text-sm text-slate-500">Reports</div>
-                    <div className="rounded-xl px-4 py-3 text-sm text-slate-500">Settings</div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 sm:p-7">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-lg font-semibold text-slate-900">Website scan overview</p>
-                      <p className="text-sm text-slate-500">Risk summary with explanation-ready output</p>
-                    </div>
-                    <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                      Updated now
-                    </div>
-                  </div>
-
-                  <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                    <div className="rounded-2xl border border-slate-200 p-5">
-                      <p className="text-sm text-slate-500">Risk score</p>
-                      <div className="mt-4 flex items-center gap-4">
-                        <div className="flex size-16 items-center justify-center rounded-full border-8 border-emerald-400 text-lg font-semibold text-slate-900">
-                          B
-                        </div>
-                        <div>
-                          <p className="text-xl font-semibold text-slate-900">Moderate</p>
-                          <p className="text-sm text-slate-500">Some friction signals detected</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 p-5">
-                      <p className="text-sm text-slate-500">Scan summary</p>
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center justify-between text-sm text-slate-700">
-                          <span>Critical</span>
-                          <span>1</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-slate-700">
-                          <span>Moderate</span>
-                          <span>3</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-slate-700">
-                          <span>Low</span>
-                          <span>2</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 p-5">
-                      <p className="text-sm text-slate-500">Scan flow</p>
-                      <div className="mt-4 space-y-3">
-                        {progressSteps.map((step, index) => {
-                          const isActive = isPending && index === activeStep;
-                          const isComplete = result && !isPending;
-
-                          return (
-                            <motion.div
-                              key={step}
-                              layout
-                              className={`rounded-xl px-3 py-2 text-left text-sm ${isActive
-                                  ? "bg-sky-100 text-sky-900"
-                                  : isComplete
-                                    ? "bg-emerald-50 text-emerald-900"
-                                    : "bg-slate-100 text-slate-600"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Sparkles className="size-4" />
-                                <span>{step}</span>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
