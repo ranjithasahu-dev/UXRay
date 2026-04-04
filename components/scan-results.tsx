@@ -96,32 +96,42 @@ export function ScanResults({
 
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Findings</p>
-          {result.findings.map((finding) => (
-            <button
-              key={finding.id}
-              type="button"
-              onClick={() => onSelectFinding(finding.id)}
-              className={`w-full rounded-2xl border px-4 py-4 text-left transition hover:border-cyan-300/50 hover:bg-cyan-300/8 ${
-                selectedFinding?.id === finding.id
-                  ? "border-cyan-300/60 bg-cyan-300/10"
-                  : "border-white/8 bg-white/4"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-base font-semibold text-white">
-                  {finding.patternType}
-                </span>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getBadgeTone(
-                    finding.severity
-                  )}`}
-                >
-                  {finding.severity}
-                </span>
-              </div>
-              <p className="mt-2 text-sm leading-6 text-slate-300">{finding.explanation}</p>
-            </button>
-          ))}
+          {result.findings.length > 0 ? (
+            result.findings.map((finding) => (
+              <button
+                key={finding.id}
+                type="button"
+                onClick={() => onSelectFinding(finding.id)}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition hover:border-cyan-300/50 hover:bg-cyan-300/8 ${
+                  selectedFinding?.id === finding.id
+                    ? "border-cyan-300/60 bg-cyan-300/10"
+                    : "border-white/8 bg-white/4"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-base font-semibold text-white">
+                    {finding.patternType}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getBadgeTone(
+                      finding.severity
+                    )}`}
+                  >
+                    {finding.severity}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{finding.explanation}</p>
+              </button>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-white/8 bg-white/4 px-4 py-5">
+              <p className="text-base font-semibold text-white">No matching patterns detected</p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                UXRay completed the scan, but this page did not match the five currently tracked
+                dark-pattern categories.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -136,46 +146,66 @@ export function ScanResults({
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={result.screenshot.src}
-            alt={`Captured scan result for ${result.url}`}
-            className="h-auto w-full"
-          />
+        {result.meta.note ? (
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-100">
+            {result.meta.note}
+          </div>
+        ) : null}
 
-          <div className="absolute inset-0">
-            {result.findings.flatMap((finding) =>
-              finding.elementIds.map((elementId) => {
-                const element = result.elements.find((candidate) => candidate.id === elementId);
+        <div className="overflow-auto rounded-[1.25rem] border border-white/10 bg-slate-900">
+          <div
+            className="relative min-w-full"
+            style={{
+              aspectRatio: `${result.screenshot.width} / ${result.screenshot.height}`,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={result.screenshot.src}
+              alt={`Captured scan result for ${result.url}`}
+              className="absolute inset-0 block h-full w-full object-fill object-top align-top"
+            />
 
-                if (!element?.bounds) {
-                  return null;
-                }
+            <div className="absolute inset-0">
+              {result.findings.flatMap((finding) =>
+                finding.elementIds.map((elementId) => {
+                  const element = result.elements.find((candidate) => candidate.id === elementId);
 
-                return (
-                  <button
-                    key={`${finding.id}-${elementId}`}
-                    type="button"
-                    onClick={() => onSelectFinding(finding.id)}
-                    className={`absolute rounded-xl border-2 transition hover:scale-[1.02] ${getSeverityColor(
-                      finding.severity
-                    )} ${selectedFinding?.id === finding.id ? "shadow-lg shadow-cyan-500/20" : ""}`}
-                    style={{
-                      left: `${(element.bounds.x / result.screenshot.width) * 100}%`,
-                      top: `${(element.bounds.y / result.screenshot.height) * 100}%`,
-                      width: `${(element.bounds.width / result.screenshot.width) * 100}%`,
-                      height: `${(element.bounds.height / result.screenshot.height) * 100}%`,
-                    }}
-                    aria-label={`Highlight ${finding.patternType}`}
-                  >
-                    <span className="absolute -top-7 left-0 max-w-[10rem] rounded-full bg-slate-950/90 px-2 py-1 text-[11px] font-medium text-white">
-                      {finding.patternType}
-                    </span>
-                  </button>
-                );
-              })
-            )}
+                  if (!element?.bounds) {
+                    return null;
+                  }
+
+                  return (
+                    <button
+                      key={`${finding.id}-${elementId}`}
+                      type="button"
+                      onClick={() => onSelectFinding(finding.id)}
+                      className={`absolute rounded-md border-2 transition hover:scale-[1.02] ${getSeverityColor(
+                        finding.severity
+                      )} ${selectedFinding?.id === finding.id ? "shadow-lg shadow-cyan-500/20" : ""}`}
+                      style={{
+                        left: `${(element.bounds.x / result.screenshot.width) * 100}%`,
+                        top: `${(element.bounds.y / result.screenshot.height) * 100}%`,
+                        width: `${(element.bounds.width / result.screenshot.width) * 100}%`,
+                        height: `${(element.bounds.height / result.screenshot.height) * 100}%`,
+                      }}
+                      aria-label={`Highlight ${finding.patternType}`}
+                    >
+                      <span className="absolute -top-7 left-0 max-w-[10rem] rounded-full bg-slate-950/90 px-2 py-1 text-[11px] font-medium text-white">
+                        {finding.patternType}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {result.findings.length === 0 ? (
+              <div className="pointer-events-none absolute inset-x-6 top-6 rounded-2xl border border-white/10 bg-slate-950/78 px-4 py-3 text-sm leading-6 text-slate-200 backdrop-blur">
+                No highlighted elements were found for the currently supported dark-pattern
+                categories on this page.
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -189,6 +219,14 @@ export function ScanResults({
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-200">
               {selectedFinding.explanation}
+            </p>
+          </div>
+        ) : result.findings.length === 0 ? (
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/4 p-4">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Scan Status</p>
+            <p className="mt-2 text-sm leading-6 text-slate-200">
+              The page was analyzed, but there are no highlighted elements to show for the
+              current detection categories.
             </p>
           </div>
         ) : null}

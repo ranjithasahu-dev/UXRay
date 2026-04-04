@@ -72,6 +72,7 @@ export type ScoreBreakdown = Record<DarkPatternType, number>;
 
 export type ScanMeta = {
   extractionMode: "playwright" | "fixture";
+  note?: string;
 };
 
 export type ScanResult = {

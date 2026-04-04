@@ -20,7 +20,7 @@ function getDemoExtraction(url: string) {
 export async function runUxRayScan(input: ScanInput): Promise<ScanResult> {
   const extractionResult = await getPageForScan(input);
   const page = extractionResult.page;
-  const findings = await analyzeDarkPatterns(page);
+  const findings = extractionResult.note ? [] : await analyzeDarkPatterns(page);
   const { score, riskLevel, breakdown } = calculateUxRayScore(findings);
 
   return {
@@ -34,6 +34,7 @@ export async function runUxRayScan(input: ScanInput): Promise<ScanResult> {
     elements: page.elements,
     meta: {
       extractionMode: extractionResult.extractionMode,
+      note: extractionResult.note,
     },
   };
 }
@@ -43,6 +44,7 @@ async function getPageForScan(input: ScanInput) {
     return {
       extractionMode: "fixture" as const,
       page: input.extractedPage,
+      note: undefined,
     };
   }
 
@@ -50,6 +52,7 @@ async function getPageForScan(input: ScanInput) {
     return {
       extractionMode: "fixture" as const,
       page: getVoyagoFixture(input.url),
+      note: "Using the local fixture dataset for this URL.",
     };
   }
 
@@ -59,6 +62,8 @@ async function getPageForScan(input: ScanInput) {
     return {
       extractionMode: "fixture" as const,
       page: getDemoExtraction(input.url),
+      note:
+        "Live page capture was unavailable for this URL. The site may be blocking automated browsing or did not load correctly.",
     };
   }
 }
