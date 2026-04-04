@@ -50,6 +50,23 @@ function getFindingIndex(result: ScanResult, findingId: string) {
   return result.findings.findIndex((finding) => finding.id === findingId) + 1;
 }
 
+function getChipPlacement(
+  bounds: { x: number; y: number; width: number; height: number },
+  screenshot: ScanResult["screenshot"]
+) {
+  const nearTop = bounds.y / screenshot.height < 0.08;
+  const nearBottom = (bounds.y + bounds.height) / screenshot.height > 0.92;
+  const nearLeft = bounds.x / screenshot.width < 0.06;
+  const nearRight = (bounds.x + bounds.width) / screenshot.width > 0.94;
+  const tinyBox = bounds.height < 36 || bounds.width < 88;
+
+  return {
+    vertical: (nearTop || tinyBox) && !nearBottom ? "bottom" : "top",
+    horizontal: nearRight && !nearLeft ? "right" : "left",
+    tinyBox,
+  } as const;
+}
+
 export function ScanResults({
   result,
   selectedFindingId,
@@ -186,11 +203,12 @@ export function ScanResults({
           </div>
         ) : null}
 
-        <div className="overflow-auto rounded-[1.25rem] border border-white/10 bg-slate-900">
+        <div className="overflow-x-auto overflow-y-visible rounded-[1.25rem] border border-white/10 bg-slate-900 pt-4">
           <div
             className="relative min-w-full"
             style={{
               aspectRatio: `${result.screenshot.width} / ${result.screenshot.height}`,
+              overflow: "visible",
             }}
           >
             {imageFailed ? (
@@ -223,6 +241,30 @@ export function ScanResults({
                     return null;
                   }
 
+                  const placement = getChipPlacement(element.bounds, result.screenshot);
+                  const chipVerticalStyle =
+                    placement.vertical === "top"
+                      ? { top: "0.5rem" }
+                      : { bottom: "0.5rem" };
+                  const chipHorizontalStyle =
+                    placement.horizontal === "left"
+                      ? { left: "0.5rem" }
+                      : { right: "0.5rem" };
+                  const labelStyle =
+                    placement.horizontal === "left"
+                      ? {
+                          left: "2.55rem",
+                          right: "0.5rem",
+                        }
+                      : {
+                          right: "2.55rem",
+                          left: "0.5rem",
+                        };
+                  const sharedVerticalStyle =
+                    placement.vertical === "top"
+                      ? { top: "0.5rem" }
+                      : { bottom: "0.5rem" };
+
                   return (
                     <button
                       key={`${finding.id}-${elementId}`}
@@ -236,14 +278,17 @@ export function ScanResults({
                         top: `${(element.bounds.y / result.screenshot.height) * 100}%`,
                         width: `${(element.bounds.width / result.screenshot.width) * 100}%`,
                         height: `${(element.bounds.height / result.screenshot.height) * 100}%`,
+                        overflow: "visible",
                       }}
                       aria-label={`Highlight ${finding.patternType}`}
                     >
                       <span
-                        className={`absolute left-2 top-2 z-10 flex min-w-6 items-center justify-center rounded-full px-2 py-1 text-[10px] leading-none font-semibold text-white shadow-lg ${
+                        className={`absolute z-10 flex min-w-7 items-center justify-center rounded-full px-2.5 py-1.5 text-[10px] leading-none font-semibold text-white shadow-lg ${
                           finding.severity === "high" ? "bg-red-600" : "bg-amber-500 text-slate-950"
                         }`}
                         style={{
+                          ...chipVerticalStyle,
+                          ...chipHorizontalStyle,
                           maxWidth: "calc(100% - 0.5rem)",
                         }}
                       >
@@ -252,10 +297,18 @@ export function ScanResults({
 
                       {selectedFinding?.id === finding.id ? (
                         <span
-                          className="absolute left-10 top-2 z-10 max-w-[min(11rem,calc(100%-2.75rem))] overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-slate-950/92 px-2 py-1 text-[10px] leading-none font-medium text-white"
+                          className="absolute z-10 overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-slate-950/92 px-2.5 py-1.5 text-[10px] leading-none font-medium text-white"
+                          style={{
+                            ...sharedVerticalStyle,
+                            ...labelStyle,
+                          }}
                         >
                           {finding.patternType}
                         </span>
+                      ) : null}
+
+                      {placement.tinyBox ? (
+                        <span className="pointer-events-none absolute inset-0 rounded-sm ring-1 ring-white/10" />
                       ) : null}
                     </button>
                   );
