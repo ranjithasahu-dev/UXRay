@@ -173,11 +173,10 @@ export function ScanResults({
                 key={finding.id}
                 type="button"
                 onClick={() => onSelectFinding(finding.id)}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition hover:border-cyan-300/50 hover:bg-cyan-300/8 ${
-                  selectedFinding?.id === finding.id
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition hover:border-cyan-300/50 hover:bg-cyan-300/8 ${selectedFinding?.id === finding.id
                     ? "border-cyan-300/60 bg-cyan-300/10"
                     : "border-white/8 bg-white/4"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
@@ -222,9 +221,7 @@ export function ScanResults({
             <p className="text-sm uppercase tracking-[0.28em] text-cyan-200/70">X-Ray View</p>
             <p className="mt-1 text-sm text-slate-400">{result.title}</p>
           </div>
-          <p className="max-w-xs text-right text-xs leading-5 text-slate-500">
-            Click a box or a finding card to inspect why UXRay flagged it.
-          </p>
+
         </div>
 
         {result.meta.note ? (
@@ -240,11 +237,10 @@ export function ScanResults({
                 key={`legend-${finding.id}`}
                 type="button"
                 onClick={() => onSelectFinding(finding.id)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  selectedFinding?.id === finding.id
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${selectedFinding?.id === finding.id
                     ? "border-cyan-300/40 bg-cyan-300/12 text-cyan-100"
                     : "border-white/10 bg-white/5 text-slate-200 hover:border-cyan-300/30"
-                }`}
+                  }`}
               >
                 <span className="flex size-5 items-center justify-center rounded-full bg-slate-950 text-[11px] text-white">
                   {getFindingIndex(result, finding.id)}
@@ -286,116 +282,115 @@ export function ScanResults({
             <div className="absolute inset-0">
               {showOverlayBoxes
                 ? result.findings.flatMap((finding) =>
-                finding.elementIds.map((elementId) => {
-                  const element = result.elements.find((candidate) => candidate.id === elementId);
+                  finding.elementIds.map((elementId) => {
+                    const element = result.elements.find((candidate) => candidate.id === elementId);
 
-                  if (!element?.bounds) {
-                    return null;
-                  }
+                    if (!element?.bounds) {
+                      return null;
+                    }
 
-                  const visibleBounds = getVisibleBounds(element.bounds, result.screenshot);
-                  const placement = getChipPlacement(visibleBounds, result.screenshot);
-                  const matchText = element.text?.trim();
-                  const chipVerticalStyle =
-                    placement.vertical === "top"
-                      ? { top: "0.5rem" }
-                      : { bottom: "0.5rem" };
-                  const chipHorizontalStyle =
-                    placement.horizontal === "left"
-                      ? { left: "0.5rem" }
-                      : { right: "0.5rem" };
-                  const labelStyle =
-                    placement.horizontal === "left"
-                      ? {
+                    const visibleBounds = getVisibleBounds(element.bounds, result.screenshot);
+                    const placement = getChipPlacement(visibleBounds, result.screenshot);
+                    const matchText = element.text?.trim();
+                    const chipVerticalStyle =
+                      placement.vertical === "top"
+                        ? { top: "0.5rem" }
+                        : { bottom: "0.5rem" };
+                    const chipHorizontalStyle =
+                      placement.horizontal === "left"
+                        ? { left: "0.5rem" }
+                        : { right: "0.5rem" };
+                    const labelStyle =
+                      placement.horizontal === "left"
+                        ? {
                           left: "2.55rem",
                           right: "0.5rem",
                         }
-                      : {
+                        : {
                           right: "2.55rem",
                           left: "0.5rem",
                         };
-                  const sharedVerticalStyle =
-                    placement.vertical === "top"
-                      ? { top: "0.5rem" }
-                      : { bottom: "0.5rem" };
-                  const tooltipVerticalStyle =
-                    placement.vertical === "top"
-                      ? { top: "3.4rem" }
-                      : { bottom: "3.4rem" };
-                  const tooltipHorizontalStyle =
-                    placement.horizontal === "left"
-                      ? { left: "0.5rem" }
-                      : { right: "0.5rem" };
+                    const sharedVerticalStyle =
+                      placement.vertical === "top"
+                        ? { top: "0.5rem" }
+                        : { bottom: "0.5rem" };
+                    const tooltipVerticalStyle =
+                      placement.vertical === "top"
+                        ? { top: "3.4rem" }
+                        : { bottom: "3.4rem" };
+                    const tooltipHorizontalStyle =
+                      placement.horizontal === "left"
+                        ? { left: "0.5rem" }
+                        : { right: "0.5rem" };
 
-                  return (
-                    <button
-                      key={`${finding.id}-${elementId}`}
-                      type="button"
-                      onClick={() => onSelectFinding(finding.id)}
-                      className={`group absolute rounded-sm border-2 transition hover:scale-[1.01] ${getSeverityColor(
-                        finding.severity
-                      )} ${selectedFinding?.id === finding.id ? "shadow-lg shadow-cyan-500/20" : ""}`}
-                      style={{
-                        left: `${(visibleBounds.x / result.screenshot.width) * 100}%`,
-                        top: `${(visibleBounds.y / result.screenshot.height) * 100}%`,
-                        width: `${(visibleBounds.width / result.screenshot.width) * 100}%`,
-                        height: `${(visibleBounds.height / result.screenshot.height) * 100}%`,
-                        overflow: "visible",
-                      }}
-                      aria-label={`Highlight ${finding.patternType}`}
-                    >
-                      <span
-                        className={`absolute z-10 flex min-w-7 items-center justify-center rounded-full px-2.5 py-1.5 text-[10px] leading-none font-semibold text-white shadow-lg ${
-                          finding.severity === "high" ? "bg-red-600" : "bg-amber-500 text-slate-950"
-                        }`}
+                    return (
+                      <button
+                        key={`${finding.id}-${elementId}`}
+                        type="button"
+                        onClick={() => onSelectFinding(finding.id)}
+                        className={`group absolute rounded-sm border-2 transition hover:scale-[1.01] ${getSeverityColor(
+                          finding.severity
+                        )} ${selectedFinding?.id === finding.id ? "shadow-lg shadow-cyan-500/20" : ""}`}
                         style={{
-                          ...chipVerticalStyle,
-                          ...chipHorizontalStyle,
-                          maxWidth: "calc(100% - 0.5rem)",
+                          left: `${(visibleBounds.x / result.screenshot.width) * 100}%`,
+                          top: `${(visibleBounds.y / result.screenshot.height) * 100}%`,
+                          width: `${(visibleBounds.width / result.screenshot.width) * 100}%`,
+                          height: `${(visibleBounds.height / result.screenshot.height) * 100}%`,
+                          overflow: "visible",
                         }}
+                        aria-label={`Highlight ${finding.patternType}`}
                       >
-                        {getFindingIndex(result, finding.id)}
-                      </span>
-
-                      {selectedFinding?.id === finding.id ? (
                         <span
-                          className="absolute z-10 max-w-[min(14rem,calc(100%-3.25rem))] overflow-hidden rounded-full bg-slate-950/92 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-lg"
+                          className={`absolute z-10 flex min-w-7 items-center justify-center rounded-full px-2.5 py-1.5 text-[10px] leading-none font-semibold text-white shadow-lg ${finding.severity === "high" ? "bg-red-600" : "bg-amber-500 text-slate-950"
+                            }`}
                           style={{
-                            ...sharedVerticalStyle,
-                            ...labelStyle,
+                            ...chipVerticalStyle,
+                            ...chipHorizontalStyle,
+                            maxWidth: "calc(100% - 0.5rem)",
                           }}
                         >
-                          <span className="block truncate">{finding.patternType}</span>
+                          {getFindingIndex(result, finding.id)}
                         </span>
-                      ) : null}
 
-                      {selectedFinding?.id === finding.id && matchText ? (
-                        <span
-                          className="pointer-events-none absolute z-20 hidden w-72 max-w-[calc(100vw-3rem)] rounded-2xl border border-white/10 bg-slate-950/96 px-3 py-3 text-left shadow-xl group-hover:block group-focus-visible:block"
-                          style={{
-                            ...tooltipVerticalStyle,
-                            ...tooltipHorizontalStyle,
-                          }}
-                        >
-                          <span className="block text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                            Why It Was Flagged
+                        {selectedFinding?.id === finding.id ? (
+                          <span
+                            className="absolute z-10 max-w-[min(14rem,calc(100%-3.25rem))] overflow-hidden rounded-full bg-slate-950/92 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-lg"
+                            style={{
+                              ...sharedVerticalStyle,
+                              ...labelStyle,
+                            }}
+                          >
+                            <span className="block truncate">{finding.patternType}</span>
                           </span>
-                          <span className="mt-2 block text-xs leading-5 text-slate-100 whitespace-normal break-words">
-                            “{matchText}”
-                          </span>
-                          <span className="mt-2 block text-xs leading-5 text-slate-300 whitespace-normal break-words">
-                            {finding.explanation}
-                          </span>
-                        </span>
-                      ) : null}
+                        ) : null}
 
-                      {placement.tinyBox ? (
-                        <span className="pointer-events-none absolute inset-0 rounded-sm ring-1 ring-white/10" />
-                      ) : null}
-                    </button>
-                  );
-                })
-              )
+                        {selectedFinding?.id === finding.id && matchText ? (
+                          <span
+                            className="pointer-events-none absolute z-20 hidden w-72 max-w-[calc(100vw-3rem)] rounded-2xl border border-white/10 bg-slate-950/96 px-3 py-3 text-left shadow-xl group-hover:block group-focus-visible:block"
+                            style={{
+                              ...tooltipVerticalStyle,
+                              ...tooltipHorizontalStyle,
+                            }}
+                          >
+                            <span className="block text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                              Why It Was Flagged
+                            </span>
+                            <span className="mt-2 block text-xs leading-5 text-slate-100 whitespace-normal break-words">
+                              “{matchText}”
+                            </span>
+                            <span className="mt-2 block text-xs leading-5 text-slate-300 whitespace-normal break-words">
+                              {finding.explanation}
+                            </span>
+                          </span>
+                        ) : null}
+
+                        {placement.tinyBox ? (
+                          <span className="pointer-events-none absolute inset-0 rounded-sm ring-1 ring-white/10" />
+                        ) : null}
+                      </button>
+                    );
+                  })
+                )
                 : null}
             </div>
 
