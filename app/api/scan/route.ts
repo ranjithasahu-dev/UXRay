@@ -4,6 +4,9 @@ import { z } from "zod";
 import { runUxRayScan } from "@/lib/uxray/scan";
 import { getPrivateUrlMessage, isPrivateOrLocalUrl } from "@/lib/uxray/url";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const requestSchema = z.object({
   url: z.string().url(),
   extractedPage: z
