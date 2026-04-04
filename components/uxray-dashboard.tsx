@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { ScanResults } from "@/components/scan-results";
 import { Button } from "@/components/ui/button";
+import { getPrivateUrlMessage, isPrivateOrLocalUrl } from "@/lib/uxray/url";
 import type { ScanResult } from "@/lib/uxray/types";
 
 const progressSteps = [
@@ -73,6 +74,17 @@ export function UxRayDashboard() {
 
     if (!normalizedUrl) {
       setError("Paste a website URL to start the scan.");
+      return;
+    }
+
+    const isRemoteApp =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+
+    if (isRemoteApp && isPrivateOrLocalUrl(normalizedUrl)) {
+      setError(getPrivateUrlMessage(normalizedUrl));
+      setResult(null);
       return;
     }
 
